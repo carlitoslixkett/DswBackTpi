@@ -6,11 +6,12 @@ using System.Threading.Tasks;
 
 namespace Dsw2025Tpi.Application.Exceptions
 {
-    public class ApplicationException : Exception
+    public abstract class ApplicationException : Exception
     {
-        public ApplicationException(string message) : base(message)
-        {
+        protected ApplicationException(string message) : base(message) { }
 
-        }
+        protected ApplicationException(string message, Exception innerException)
+            : base(message, innerException) { }
     }
 }
+

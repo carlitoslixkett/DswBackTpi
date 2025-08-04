@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Dsw2025Tpi.Application.Dtos;
+using static Dsw2025Tpi.Application.Dtos.OrderModel;
 
 namespace Dsw2025Tpi.Application.Interfaces
 {
@@ -16,5 +17,9 @@ namespace Dsw2025Tpi.Application.Interfaces
         Task<OrderModel.ResponseOrderModel> AddOrder(OrderModel.RequestOrderModel request);
 
         Task<OrderModel.ResponseOrderModel> PutOrder(Guid id, OrderModel.RequestOrderModel request);
+
+        Task<IEnumerable<ResponseOrderModel>> GetAllOrders(string? status, Guid? customerId, int pageNumber, int pageSize);
+
+        Task<ResponseOrderModel> UpdateStatusAsync(Guid id, string newStatus);
     }
 }
