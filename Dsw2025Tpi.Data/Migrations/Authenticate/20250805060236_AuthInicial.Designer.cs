@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Dsw2025Tpi.Data.Migrations.Authenticate
 {
     [DbContext(typeof(AuthenticateContext))]
-    [Migration("20250801200607_IdentityCreate")]
-    partial class IdentityCreate
+    [Migration("20250805060236_AuthInicial")]
+    partial class AuthInicial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

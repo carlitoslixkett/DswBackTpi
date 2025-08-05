@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Dsw2025Tpi.Data.Migrations.Authenticate
 {
     /// <inheritdoc />
-    public partial class IdentityCreate : Migration
+    public partial class AuthInicial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

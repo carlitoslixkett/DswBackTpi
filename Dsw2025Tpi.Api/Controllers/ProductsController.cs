@@ -21,6 +21,7 @@ namespace Dsw2025Tpi.Api.Controllers
 
         // POST: /api/products
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateProduct([FromBody] ProductModel.RequestProductModel request)
         {
             if (!ModelState.IsValid)

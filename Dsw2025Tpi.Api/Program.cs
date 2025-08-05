@@ -1,14 +1,16 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
+﻿using Dsw2025Tpi.Api.Middleware;
+using Dsw2025Tpi.Application.Interfaces;
+using Dsw2025Tpi.Application.Services;
+using Dsw2025Tpi.Data;
+using Dsw2025Tpi.Data.Helpers;
+using Dsw2025Tpi.Data.Repositories;
+using Dsw2025Tpi.Domain.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
-using Dsw2025Tpi.Data;
-using Dsw2025Tpi.Application.Interfaces;
-using Dsw2025Tpi.Application.Services;
-using Dsw2025Tpi.Api.Middleware;
-using Dsw2025Tpi.Data.Helpers;
 
 namespace Dsw2025Tpi.Api;
 
@@ -88,6 +90,9 @@ public class Program
         // -------------------------------------------------------------
         builder.Services.AddScoped<IAuthService, AuthService>(); // Servicio de autenticación
         builder.Services.AddScoped<IJwtTokenService, JwtTokenService>(); // Generación de tokens JWT
+        builder.Services.AddScoped<IProductsManagementService, ProductsManagementService>();
+        builder.Services.AddScoped<IRepository, EfRepository>();
+        builder.Services.AddScoped<IOrdersManagementService, OrdersManagementService>();
 
         // -------------------------------------------------------------
         // 6️⃣ Configuración de autenticación con JWT
