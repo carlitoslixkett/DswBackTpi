@@ -26,7 +26,7 @@ namespace Dsw2025Tpi.Application.Services
             var orderItems = new List<OrderItem>();
             decimal total = 0;
 
-            foreach (var item in request.Items)
+            foreach (var item in request.OrderItems)
             {
                 var product = await _repository.GetById<Product>(item.ProductId);
 
@@ -55,12 +55,10 @@ namespace Dsw2025Tpi.Application.Services
             var order = new Order
             {
                 Id = Guid.NewGuid(),
-                Date = request.Date,
+                Date = DateTime.Now,
                 CustomerId = request.CustomerId,
                 ShippingAddress = request.ShippingAddress ?? string.Empty,
                 BillingAddress = request.BillingAddress ?? string.Empty,
-                Notes = request.Notes,
-                Status = request.Status,
                 OrderItems = orderItems,
                
             };
@@ -85,12 +83,10 @@ namespace Dsw2025Tpi.Application.Services
             if (order == null)
                 throw new EntityNotFoundException("Orden no encontrada");
 
-            order.Date = request.Date;
             order.CustomerId = request.CustomerId;
             order.ShippingAddress = request.ShippingAddress ?? string.Empty;
             order.BillingAddress = request.BillingAddress ?? string.Empty;
-            order.Notes = request.Notes;
-            order.Status = request.Status;
+
 
             await _repository.Update(order);
 

@@ -44,7 +44,7 @@ namespace Dsw2025Tpi.Api.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, User")]
         public async Task<IActionResult> GetProductById(Guid id)
         {
             try

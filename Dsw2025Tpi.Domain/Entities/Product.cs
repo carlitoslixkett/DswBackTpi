@@ -47,7 +47,7 @@ namespace Dsw2025Tpi.Domain.Entities
                 _stockQuantity = value;
             }
         }
-        public bool IsActive { get; set; }
+        public bool IsActive { get; set; } = true;
 
 
 

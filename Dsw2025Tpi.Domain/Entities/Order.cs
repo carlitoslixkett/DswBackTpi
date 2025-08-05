@@ -56,7 +56,7 @@ namespace Dsw2025Tpi.Domain.Entities
         public decimal TotalAmount => OrderItems.Sum(p => p.Subtotal);
 
 
-        public OrderStatus Status { get; set; }
+        public OrderStatus Status { get; set; } = OrderStatus.PENDING;
         public Guid CustomerId { get; set; }
         public Customer? Customer { get; set; }
         public ICollection<OrderItem> OrderItems { get; set; }

@@ -32,7 +32,7 @@ namespace Dsw2025Tpi.Application.Services
                 Description = dto.Description,
                 CurrentUnitPrice = dto.CurrentUnitPrice,
                 StockQuantity = dto.StockQuantity,
-                IsActive = dto.IsActive
+
             };
 
             await _repository.Add(product);
@@ -99,7 +99,7 @@ namespace Dsw2025Tpi.Application.Services
             product.Description = dto.Description;
             product.CurrentUnitPrice = dto.CurrentUnitPrice;
             product.StockQuantity = dto.StockQuantity;
-            product.IsActive = dto.IsActive;
+   
 
             await _repository.Update(product);
 
