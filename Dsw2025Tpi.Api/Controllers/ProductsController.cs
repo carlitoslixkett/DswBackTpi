@@ -1,6 +1,7 @@
 ﻿using Dsw2025Tpi.Application.Dtos;
 using Dsw2025Tpi.Application.Exceptions;
 using Dsw2025Tpi.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using static Dsw2025Tpi.Application.Dtos.ProductModel;
 
@@ -8,6 +9,7 @@ namespace Dsw2025Tpi.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    
     public class ProductsController : ControllerBase
     {
         private readonly IProductsManagementService _productService;
@@ -29,6 +31,7 @@ namespace Dsw2025Tpi.Api.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> GetAllProducts()
         {
             var products = await _productService.GetAllAsync();
@@ -40,6 +43,7 @@ namespace Dsw2025Tpi.Api.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetProductById(Guid id)
         {
             try
@@ -54,6 +58,7 @@ namespace Dsw2025Tpi.Api.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateProduct(Guid id, [FromBody] RequestProductModel dto)
         {
             try
@@ -72,6 +77,7 @@ namespace Dsw2025Tpi.Api.Controllers
         }
 
         [HttpPatch("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DisableProduct(Guid id)
         {
             try
@@ -84,18 +90,6 @@ namespace Dsw2025Tpi.Api.Controllers
                 return NotFound(new { message = ex.Message }); // 404
             }
         }
-
-
-
-
-
-
-
-
-
-
-
-
 
     }
 }

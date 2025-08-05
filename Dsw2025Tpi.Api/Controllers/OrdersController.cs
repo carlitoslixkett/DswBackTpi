@@ -1,5 +1,6 @@
 ﻿using Dsw2025Tpi.Application.Exceptions;
 using Dsw2025Tpi.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using static Dsw2025Tpi.Application.Dtos.OrderModel;
 
@@ -7,6 +8,7 @@ namespace Dsw2025Tpi.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+   
     public class OrdersController : ControllerBase
     {
         private readonly IOrdersManagementService _orderService;
@@ -17,6 +19,7 @@ namespace Dsw2025Tpi.Api.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "User")]
         public async Task<IActionResult> CreateOrder([FromBody] RequestOrderModel request)
         {
             try
@@ -37,6 +40,7 @@ namespace Dsw2025Tpi.Api.Controllers
       
 
         [HttpGet]
+        [Authorize(Roles = "Admin,User")]
         public async Task<IActionResult> GetAllOrders(
             [FromQuery] string? status,
             [FromQuery] Guid? customerId,
@@ -56,6 +60,7 @@ namespace Dsw2025Tpi.Api.Controllers
 
         // Necesario para que CreatedAtAction funcione correctamente
         [HttpGet("{id}")]
+        [Authorize(Roles = "Admin,User")]
         public async Task<IActionResult> GetOrderById(Guid id)
         {
             try
@@ -70,6 +75,7 @@ namespace Dsw2025Tpi.Api.Controllers
         }
 
         [HttpPut("{id}/status")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateOrderStatus(Guid id, [FromBody] UpdateStatusRequest request)
         {
             try
