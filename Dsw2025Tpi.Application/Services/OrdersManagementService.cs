@@ -9,6 +9,7 @@ using Dsw2025Tpi.Domain.Entities;
 using Dsw2025Tpi.Domain.Interfaces;
 using static Dsw2025Tpi.Application.Dtos.OrderModel;
 using static Dsw2025Tpi.Application.Dtos.OrderItemModel;
+using Dsw2025Tpi.Application.Validation;
 
 namespace Dsw2025Tpi.Application.Services
 {
@@ -23,6 +24,12 @@ namespace Dsw2025Tpi.Application.Services
 
         public async Task<ResponseOrderModel> AddOrder(RequestOrderModel request)
         {
+            OrderValidator.Validate(request);
+            foreach (var item in request.OrderItems)
+            {
+                OrderItemValidator.Validate(item);
+            }
+
             var orderItems = new List<OrderItem>();
             decimal total = 0;
 

@@ -10,6 +10,9 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.ComponentModel.DataAnnotations;
+using Azure.Core;
+using Dsw2025Tpi.Application.Validation;
 
 
 namespace Dsw2025Tpi.Application.Services;
@@ -32,19 +35,24 @@ public class AuthService : IAuthService
 
     public async Task<string> RegisterAsync(RegisterModel model)
     {
+        //CustomerValidator.Validate(model);
         var user = new IdentityUser
         {
             UserName = model.Username,
-            Email = model.Email
+            Email = model.Email,
+            PhoneNumber = model.PhoneNumber
         };
 
+        
         var result = await _userManager.CreateAsync(user, model.Password);
+        
         if (!result.Succeeded)
         {
+           
             var errors = string.Join("; ", result.Errors.Select(e => e.Description));
             throw new ApplicationException($"Error en el registro: {errors}");
         }
-
+        
         return GenerateToken(user);
     }
 
