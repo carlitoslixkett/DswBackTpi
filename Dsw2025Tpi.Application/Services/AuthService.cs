@@ -1,99 +1,88 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using Dsw2025Tpi.Application.Dtos;
+using Dsw2025Tpi.Application.Exceptions;
 using Dsw2025Tpi.Application.Interfaces;
+using Dsw2025Tpi.Application.Validation;
+using Dsw2025Tpi.Data;
+using Dsw2025Tpi.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using System.ComponentModel.DataAnnotations;
-using Azure.Core;
-using Dsw2025Tpi.Application.Validation;
 
 
-namespace Dsw2025Tpi.Application.Services;
-
-public class AuthService : IAuthService
+namespace Dsw2025Tpi.Application.Services
 {
-    private readonly UserManager<IdentityUser> _userManager;
-    private readonly SignInManager<IdentityUser> _signInManager;
-    private readonly IConfiguration _configuration;
-
-    public AuthService(
-        UserManager<IdentityUser> userManager,
-        SignInManager<IdentityUser> signInManager,
-        IConfiguration configuration)
+    public class AuthService : IAuthService
     {
-        _userManager = userManager;
-        _signInManager = signInManager;
-        _configuration = configuration;
-    }
+        private readonly UserManager<IdentityUser> _userManager;
+        private readonly SignInManager<IdentityUser> _signInManager;
+        private readonly IConfiguration _configuration;
+        private readonly Dsw2025TpiContext _context;
+        private readonly IJwtTokenService _jwtTokenService;
 
-    public async Task<string> RegisterAsync(RegisterModel model)
-    {
-        //CustomerValidator.Validate(model);
-        var user = new IdentityUser
+        public AuthService(
+            UserManager<IdentityUser> userManager,
+            SignInManager<IdentityUser> signInManager,
+            IConfiguration configuration,
+            Dsw2025TpiContext context,
+            IJwtTokenService jwtTokenService)
         {
-            UserName = model.Username,
-            Email = model.Email,
-            PhoneNumber = model.PhoneNumber
-        };
-
-        
-        var result = await _userManager.CreateAsync(user, model.Password);
-        
-        if (!result.Succeeded)
-        {
-           
-            var errors = string.Join("; ", result.Errors.Select(e => e.Description));
-            throw new ApplicationException($"Error en el registro: {errors}");
-        }
-        
-        return GenerateToken(user);
-    }
-
-    public async Task<string> LoginAsync(LoginModel model)
-    {
-        var user = await _userManager.FindByNameAsync(model.Username);
-        if (user == null)
-        {
-            throw new ApplicationException("Usuario o contraseña inválidos.");
+            _userManager = userManager;
+            _signInManager = signInManager;
+            _configuration = configuration;
+            _context = context;
+            _jwtTokenService = jwtTokenService;
         }
 
-        var result = await _signInManager.CheckPasswordSignInAsync(user, model.Password, false);
-        if (!result.Succeeded)
+        public async Task<string> RegisterAsync(RegisterModel model)
         {
-            throw new ApplicationException("Usuario o contraseña inválidos.");
+            CustomerValidator.Validate(model);
+
+            var user = new IdentityUser
+            {
+                UserName = model.Username,
+                Email = model.Email,
+                PhoneNumber = model.PhoneNumber
+            };
+
+            var result = await _userManager.CreateAsync(user, model.Password);
+            if (!result.Succeeded)
+            {
+                var errors = string.Join("; ", result.Errors.Select(e => e.Description));
+                throw new BadRequestException($"Error en el registro: {errors}");
+            }
+
+            await _userManager.AddToRoleAsync(user, "User");
+
+            var customer = new Customer
+            {
+                Id = Guid.Parse(user.Id),
+                Name = model.Username,
+                Email = model.Email,
+                PhoneNumber = model.PhoneNumber
+            };
+
+            _context.Customers.Add(customer);
+            await _context.SaveChangesAsync();
+
+            return "Usuario registrado correctamente como cliente.";
         }
 
-        return GenerateToken(user);
-    }
-
-    private string GenerateToken(IdentityUser user)
-    {
-        var jwtSettings = _configuration.GetSection("Jwt");
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]!));
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-        var claims = new[]
+        public async Task<object> LoginAsync(LoginModel model)
         {
-            new Claim(JwtRegisteredClaimNames.Sub, user.UserName!),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new Claim(ClaimTypes.NameIdentifier, user.Id)
-        };
+            var user = await _userManager.FindByNameAsync(model.Username);
+            if (user == null)
+                throw new UnauthorizedException("Usuario no encontrado.");
 
-        var token = new JwtSecurityToken(
-            issuer: jwtSettings["Issuer"],
-            audience: jwtSettings["Audience"],
-            claims: claims,
-            expires: DateTime.UtcNow.AddHours(2),
-            signingCredentials: creds
-        );
+            var isValid = await _signInManager.CheckPasswordSignInAsync(user, model.Password, false);
+            if (!isValid.Succeeded)
+                throw new UnauthorizedException("Contraseña incorrecta.");
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
+            return _jwtTokenService.GenerateToken(user);
+
+        }
     }
 }
+

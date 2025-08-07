@@ -1,16 +1,17 @@
-﻿using Dsw2025Tpi.Api.Middleware;
-using Dsw2025Tpi.Application.Interfaces;
-using Dsw2025Tpi.Application.Services;
-using Dsw2025Tpi.Data;
-using Dsw2025Tpi.Data.Helpers;
-using Dsw2025Tpi.Data.Repositories;
-using Dsw2025Tpi.Domain.Interfaces;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
-using System.Text;
+﻿// 🔁 Imports de namespaces propios y del framework
+using Dsw2025Tpi.Api.Middleware;                         // Middleware personalizado para manejar excepciones globales
+using Dsw2025Tpi.Application.Interfaces;                 // Interfaces de servicios de la capa de aplicación
+using Dsw2025Tpi.Application.Services;                   // Implementaciones de servicios de la capa de aplicación
+using Dsw2025Tpi.Data;                                   // DbContext principal y clases relacionadas a datos
+using Dsw2025Tpi.Data.Helpers;                           // Métodos auxiliares como el seeding
+using Dsw2025Tpi.Data.Repositories;                      // Repositorio genérico
+using Dsw2025Tpi.Domain.Interfaces;                      // Interfaces del dominio
+using Microsoft.AspNetCore.Authentication.JwtBearer;     // JWT para autenticación
+using Microsoft.AspNetCore.Identity;                     // Identity para manejo de usuarios/roles
+using Microsoft.EntityFrameworkCore;                     // Entity Framework Core
+using Microsoft.IdentityModel.Tokens;                    // Validación y firma de tokens
+using Microsoft.OpenApi.Models;                          // Swagger
+using System.Text;                                       // Para codificar la clave JWT
 
 namespace Dsw2025Tpi.Api;
 
@@ -18,36 +19,33 @@ public class Program
 {
     public static async Task Main(string[] args)
     {
-        // -------------------------------------------------------------
-        // 1️⃣ Crear el builder de la aplicación
-        // -------------------------------------------------------------
+        // 🧱 1. Crear builder para configurar servicios y app
         var builder = WebApplication.CreateBuilder(args);
 
-        // Agregar soporte para controladores (API REST)
+        // 🧩 Habilitar controladores (usaremos Web API)
         builder.Services.AddControllers();
 
-        // Habilitar generación de endpoints para exploración de API
+        // 🧪 Habilitar endpoints para exploración Swagger
         builder.Services.AddEndpointsApiExplorer();
 
-        // -------------------------------------------------------------
-        // 2️⃣ Configuración de Swagger (documentación de la API)
-        // -------------------------------------------------------------
+        // 📝 2. Configurar Swagger para documentación de la API
         builder.Services.AddSwaggerGen(c =>
         {
+            // Título y versión de la API
             c.SwaggerDoc("v1", new OpenApiInfo { Title = "API Dsw2025Tpi", Version = "v1" });
 
-            // Definición de seguridad para usar JWT en Swagger
+            // Configurar autenticación JWT en Swagger
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
-                Name = "Authorization",
-                Type = SecuritySchemeType.Http,
-                Scheme = "bearer",
-                BearerFormat = "JWT",
-                In = ParameterLocation.Header,
+                Name = "Authorization",                   // Nombre del header
+                Type = SecuritySchemeType.Http,           // Tipo de autenticación
+                Scheme = "bearer",                         // Formato de autenticación
+                BearerFormat = "JWT",                      // Tipo de token
+                In = ParameterLocation.Header,             // Ubicación del token
                 Description = "Ingrese el token JWT en el formato: Bearer {tu token}"
             });
 
-            // Aplicar seguridad global a todos los endpoints
+            // Aplicar autenticación a todos los endpoints
             c.AddSecurityRequirement(new OpenApiSecurityRequirement
             {
                 {
@@ -59,44 +57,35 @@ public class Program
                             Id = "Bearer"
                         }
                     },
-                    Array.Empty<string>()
+                    Array.Empty<string>() // No se requieren scopes adicionales
                 }
             });
         });
 
-        // Agregar Health Checks (verificación de salud de la API)
-        builder.Services.AddHealthChecks();
 
-        // -------------------------------------------------------------
-        // 3️⃣ Configuración de bases de datos
-        // -------------------------------------------------------------
-        // Base de datos principal (productos, órdenes, clientes)
+        // 🗄️ 3. Configurar bases de datos
+
+        // Base de datos principal con productos, órdenes, etc.
         builder.Services.AddDbContext<Dsw2025TpiContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("MainDb")));
 
-        // Base de datos de autenticación (usuarios y roles de Identity)
+        // Base de datos separada solo para usuarios/roles
         builder.Services.AddDbContext<AuthenticateContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("AuthDb")));
 
-        // -------------------------------------------------------------
-        // 4️⃣ Configuración de Identity (manejo de usuarios y roles)
-        // -------------------------------------------------------------
+        // 🔐 4. Configuración de Identity usando AuthDb
         builder.Services.AddIdentity<IdentityUser, IdentityRole>()
-            .AddEntityFrameworkStores<AuthenticateContext>() // Usa AuthDb para usuarios y roles
-            .AddDefaultTokenProviders();                     // Tokens para recuperación de cuenta, etc.
+            .AddEntityFrameworkStores<AuthenticateContext>() // Usa AuthDb para guardar usuarios y roles
+            .AddDefaultTokenProviders();                     // Tokens para recuperar contraseña, etc.
 
-        // -------------------------------------------------------------
-        // 5️⃣ Registro de servicios propios de la aplicación
-        // -------------------------------------------------------------
-        builder.Services.AddScoped<IAuthService, AuthService>(); // Servicio de autenticación
-        builder.Services.AddScoped<IJwtTokenService, JwtTokenService>(); // Generación de tokens JWT
-        builder.Services.AddScoped<IProductsManagementService, ProductsManagementService>();
-        builder.Services.AddScoped<IRepository, EfRepository>();
-        builder.Services.AddScoped<IOrdersManagementService, OrdersManagementService>();
+        // 🧩 5. Registrar servicios y repositorios (Inyección de dependencias)
+        builder.Services.AddScoped<IAuthService, AuthService>();                     // Servicio para login/registro
+        builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();             // Servicio para generar tokens JWT
+        builder.Services.AddScoped<IProductsManagementService, ProductsManagementService>(); // Lógica de productos
+        builder.Services.AddScoped<IRepository, EfRepository>();                     // Repositorio genérico
+        builder.Services.AddScoped<IOrdersManagementService, OrdersManagementService>(); // Lógica de órdenes
 
-        // -------------------------------------------------------------
-        // 6️⃣ Configuración de autenticación con JWT
-        // -------------------------------------------------------------
+        // 🔐 6. Configurar autenticación JWT
         var jwtSettings = builder.Configuration.GetSection("Jwt");
         var key = Encoding.UTF8.GetBytes(jwtSettings["Key"] ?? throw new Exception("Missing JWT Key"));
 
@@ -107,44 +96,40 @@ public class Program
         })
         .AddJwtBearer(options =>
         {
-            options.RequireHttpsMetadata = false;
+            options.RequireHttpsMetadata = false; // no requiere HTTPS en dev
             options.SaveToken = true;
             options.TokenValidationParameters = new TokenValidationParameters
             {
-                ValidateIssuer = true,              // Validar quién emitió el token
-                ValidateAudience = true,            // Validar para quién es el token
-                ValidateLifetime = true,            // Validar que no esté vencido
-                ValidateIssuerSigningKey = true,    // Validar firma del token
+                ValidateIssuer = true,                       // ¿Quién emite el token?
+                ValidateAudience = true,                     // ¿Para quién es el token?
+                ValidateLifetime = true,                     // ¿Está vencido?
+                ValidateIssuerSigningKey = true,             // ¿Tiene firma válida?
                 ValidIssuer = jwtSettings["Issuer"],
                 ValidAudience = jwtSettings["Audience"],
                 IssuerSigningKey = new SymmetricSecurityKey(key),
-                ClockSkew = TimeSpan.Zero           // No permitir tiempo extra tras vencimiento
+                ClockSkew = TimeSpan.Zero                    // Sin tiempo extra tras vencimiento
             };
         });
 
-        // Registrar middleware global para manejo de excepciones
+        // ⚠️ 7. Middleware global de manejo de errores
         builder.Services.AddTransient<GlobalExceptionMiddleware>();
 
-        // -------------------------------------------------------------
-        // 7️⃣ Construir la aplicación
-        // -------------------------------------------------------------
+        // 🏗️ 8. Construir la aplicación (WebApplication)
         var app = builder.Build();
 
-        // -------------------------------------------------------------
-        // 8️⃣ Seeding inicial: cargar datos y usuario admin desde appsettings.json
-        // -------------------------------------------------------------
+        // 🌱 9. Seeding: cargar datos iniciales (productos, admin, roles)
         using (var scope = app.Services.CreateScope())
         {
-            // Sembrar datos de productos/clientes en la base principal
+            // Obtener instancia de contexto principal
             var db = scope.ServiceProvider.GetRequiredService<Dsw2025TpiContext>();
-            db.SeedDatabase();
+            db.SeedDatabase(); // Insertar productos y clientes desde SeedData.cs
 
-            // Crear roles y usuario administrador si no existen
+            // Identity: crear roles y usuario admin desde configuración
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
             var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             var config = builder.Configuration;
 
-            // Crear roles (Admin, User)
+            // Obtener roles desde appsettings.json
             var roles = config.GetSection("Roles").Get<string[]>();
             if (roles != null)
             {
@@ -153,7 +138,7 @@ public class Program
                         await roleManager.CreateAsync(new IdentityRole(role));
             }
 
-            // Crear usuario admin
+            // Crear usuario admin si no existe
             var adminConfig = config.GetSection("AdminUser");
             string adminEmail = adminConfig["Email"]!;
             string adminUsername = adminConfig["Username"]!;
@@ -171,29 +156,33 @@ public class Program
 
                 var result = await userManager.CreateAsync(newAdmin, adminPassword);
                 if (result.Succeeded)
-                    await userManager.AddToRoleAsync(newAdmin, "Admin"); // Asignar rol Admin
+                    await userManager.AddToRoleAsync(newAdmin, "Admin");
             }
         }
 
-        // -------------------------------------------------------------
-        // 9️⃣ Configuración del pipeline de la aplicación
-        // -------------------------------------------------------------
+        // 🚦 10. Pipeline de la aplicación HTTP
+
+        // Swagger habilitado solo en entorno de desarrollo
         if (app.Environment.IsDevelopment())
         {
-            app.UseSwagger();      // Documentación Swagger
-            app.UseSwaggerUI();    // Interfaz Swagger UI
+            app.UseSwagger();
+            app.UseSwaggerUI();
         }
 
-        app.UseMiddleware<GlobalExceptionMiddleware>(); // Captura errores globales
-        app.UseHttpsRedirection();                      // Forzar HTTPS
+        // Manejo global de errores con nuestro middleware
+        app.UseMiddleware<GlobalExceptionMiddleware>();
 
-        app.UseAuthentication();   // Habilitar autenticación JWT
-        app.UseAuthorization();    // Habilitar validación de roles
+        // Forzar HTTPS
+        app.UseHttpsRedirection();
 
-        app.MapControllers();      // Mapear controladores (rutas API)
-        app.MapHealthChecks("/healthcheck"); // Endpoint para verificar salud del servicio
+        // Activar autenticación y autorización
+        app.UseAuthentication();
+        app.UseAuthorization();
 
-        // Iniciar la aplicación
+        // Mapear controladores a rutas REST (/api/xxx)
+        app.MapControllers();
+
+        // 🏁 Iniciar la aplicación
         await app.RunAsync();
     }
 }

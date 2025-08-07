@@ -10,19 +10,22 @@ namespace Dsw2025Tpi.Application.Validation
 {
     public static class CustomerValidator
     {
-        public static void Validate(CustomerModel.RequestCustomer request)
+        public static void Validate(RegisterModel request)
         {
             if (request == null)
-                throw new EntityNotFoundException("El cliente no puede ser nulo.");
+                throw new BadRequestException("La solicitud de registro no puede ser nula.");
 
-            if (string.IsNullOrWhiteSpace(request.Name))
-                throw new EntityNotFoundException("El nombre es obligatorio.");
+            if (string.IsNullOrWhiteSpace(request.Username))
+                throw new BadRequestException("El nombre de usuario es obligatorio.");
 
             if (string.IsNullOrWhiteSpace(request.Email))
-                throw new EntityNotFoundException("El email es obligatorio.");
+                throw new BadRequestException("El email es obligatorio.");
 
             if (string.IsNullOrWhiteSpace(request.PhoneNumber))
-                throw new EntityNotFoundException("El teléfono es obligatorio.");
+                throw new BadRequestException("El teléfono es obligatorio.");
+
+            if (string.IsNullOrWhiteSpace(request.Password))
+                throw new BadRequestException("La contraseña es obligatoria.");
         }
     }
 }

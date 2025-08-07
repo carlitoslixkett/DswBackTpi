@@ -9,6 +9,7 @@ using Dsw2025Tpi.Application.Exceptions;
 using Dsw2025Tpi.Application.Interfaces;
 using Dsw2025Tpi.Domain.Entities;
 using Dsw2025Tpi.Domain.Interfaces;
+using Dsw2025Tpi.Application.Validation;
 
 namespace Dsw2025Tpi.Application.Services
 {
@@ -23,6 +24,9 @@ namespace Dsw2025Tpi.Application.Services
 
         public async Task<ResponseProductModel> CreateAsync(RequestProductModel dto)
         {
+
+            ProductValidator.Validate(dto);
+
             var product = new Product
             {
                 Id = Guid.NewGuid(),
@@ -87,6 +91,8 @@ namespace Dsw2025Tpi.Application.Services
 
         public async Task<ResponseProductModel> UpdateAsync(Guid id, RequestProductModel dto)
         {
+            ProductValidator.Validate(dto);
+
             var product = await _repository.GetById<Product>(id);
 
 

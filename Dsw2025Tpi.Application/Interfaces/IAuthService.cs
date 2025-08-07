@@ -10,5 +10,5 @@ namespace Dsw2025Tpi.Application.Interfaces;
 public interface IAuthService
 {
     Task<string> RegisterAsync(RegisterModel model);
-    Task<string> LoginAsync(LoginModel model);
+    Task<object> LoginAsync(LoginModel model);
 }

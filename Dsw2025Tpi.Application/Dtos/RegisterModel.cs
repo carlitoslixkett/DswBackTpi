@@ -7,5 +7,5 @@ using System.Threading.Tasks;
 
 namespace Dsw2025Tpi.Application.Dtos
 {
-    public record RegisterModel([Required] string Username, [Required] string Password, [Required, EmailAddress] string Email, [Required] string PhoneNumber);
+    public record RegisterModel( string Username,  string Password,  string Email,  string PhoneNumber);
 }
