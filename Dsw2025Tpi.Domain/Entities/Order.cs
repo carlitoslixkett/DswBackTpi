@@ -25,7 +25,7 @@ namespace Dsw2025Tpi.Domain.Entities
             Status = newStatus;
         }
 
-        //Copilot hizo el codigo para comprobar y restar cuando se solicite la cantidad de un producto del stock del mismo
+ 
         public OrderItem AddItem(Product product, int quantity)
         {
             if (product == null)
@@ -40,7 +40,6 @@ namespace Dsw2025Tpi.Domain.Entities
             if (product.StockQuantity < quantity)
                 throw new InvalidOperationException("No hay stock suficiente para este producto.");
 
-            // Descontar stock
             product.StockQuantity -= quantity;
 
             var item = new OrderItem(quantity, product.CurrentUnitPrice, this.Id, product.Id);

@@ -190,20 +190,16 @@ namespace Dsw2025Tpi.Application.Services
         {
             var allOrders = await _repository.GetAll<Order>("OrderItems");
 
-            // Filtrado por estado (si se especifica)
             if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<OrderStatus>(status, true, out var parsedStatus))
                 allOrders = allOrders?.Where(o => o.Status == parsedStatus);
 
-            // Filtrado por cliente (si se especifica)
             if (customerId.HasValue)
                 allOrders = allOrders?.Where(o => o.CustomerId == customerId.Value);
 
-            // Paginación
             var pagedOrders = allOrders?
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize);
 
-            // Retorno DTOs
             return pagedOrders?.Select(order => new ResponseOrderModel(
                 order.Id,
                 order.Date,

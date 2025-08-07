@@ -11,7 +11,6 @@ public class Dsw2025TpiContext : DbContext
 
     }
 
-    //Para gestionar las tablas del Entity Framework (CRUD)
     public DbSet<Product> Products { get; set; }
     public DbSet<Order> Orders { get; set; }
     public DbSet<OrderItem> OrderItems { get; set; }
@@ -25,7 +24,7 @@ public class Dsw2025TpiContext : DbContext
         {
             eb.ToTable("Customers");
             eb.Property(c => c.Id)
-            .ValueGeneratedNever(); //Para que el entity framework no genere un id, osea que la bse de datos no lo genere
+            .ValueGeneratedNever(); 
             eb.Property(c => c.Email)
             .HasMaxLength(320);
             eb.Property(c => c.Name)
@@ -62,7 +61,6 @@ public class Dsw2025TpiContext : DbContext
         modelBuilder.Entity<Product>(eb =>
         {
             eb.ToTable("Products");
-            //eb.HasKey(p => p.Id);
             eb.Property(p => p.Id)
             .ValueGeneratedNever();
             eb.Property(p => p.Sku)

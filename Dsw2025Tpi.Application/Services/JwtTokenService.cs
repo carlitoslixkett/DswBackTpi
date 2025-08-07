@@ -21,10 +21,8 @@ namespace Dsw2025Tpi.Application.Services
             _userManager = userManager;
         }
 
-        // ✅ Implementa correctamente la interfaz (sin async)
         public object GenerateToken(IdentityUser user)
         {
-            // Forzar ejecución de código async de manera síncrona
             var roles = _userManager.GetRolesAsync(user).GetAwaiter().GetResult();
 
             var claims = new List<Claim>
