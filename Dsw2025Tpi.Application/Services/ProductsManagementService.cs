@@ -10,16 +10,20 @@ using Dsw2025Tpi.Application.Interfaces;
 using Dsw2025Tpi.Domain.Entities;
 using Dsw2025Tpi.Domain.Interfaces;
 using Dsw2025Tpi.Application.Validation;
+using Microsoft.Extensions.Logging;
 
 namespace Dsw2025Tpi.Application.Services
 {
     public class ProductsManagementService : IProductsManagementService
     {
         private readonly IRepository _repository;
+        private readonly ILogger<ProductsManagementService> _logger;
 
-        public ProductsManagementService(IRepository repository)
+
+        public ProductsManagementService(IRepository repository, ILogger<ProductsManagementService> logger)
         {
             _repository = repository;
+            _logger = logger;
         }
 
         public async Task<ResponseProductModel> CreateAsync(RequestProductModel dto)
@@ -135,5 +139,53 @@ namespace Dsw2025Tpi.Application.Services
             await _repository.Update(product);
 
         }
+
+        public async Task<ProductModel.ResponsePagination?> GetProducts(ProductModel.FilterProduct request)
+        {
+            bool? isActive = request.Status?.ToLower() switch
+            {
+                "enabled" => true,
+                "disabled" => false,
+                _ => null
+            };
+
+            _logger.LogInformation("Consulta de productos por admin");
+
+            // Obtener todos los productos
+            var productsDb = await _repository.GetFiltered<Product>(p =>
+                (isActive == null || p.IsActive == isActive) &&
+                (string.IsNullOrEmpty(request.Search) ||
+                 p.Name.ToLower().Contains(request.Search.ToLower()))
+            );
+
+            if (productsDb == null || !productsDb.Any())
+                return null;
+
+            // Paginación
+            int page = request.PageNumber ?? 1;
+            int size = request.PageSize ?? productsDb.Count();
+
+            var pagedProducts = productsDb
+                .OrderBy(p => p.Sku)
+                .Skip((page - 1) * size)
+                .Take(size)
+                .Select(p => new ProductModel.ResponseProductModel(
+                    p.Id,
+                    p.Sku,
+                    p.InternalCode,
+                    p.Name,
+                    p.Description,
+                    p.CurrentUnitPrice,
+                    p.StockQuantity,
+                    p.IsActive
+                ))
+                .ToList();
+
+            return new ProductModel.ResponsePagination(
+                pagedProducts,             // items
+                productsDb.Count()         // total
+            );
+        }
+
     }
 }

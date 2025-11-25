@@ -13,5 +13,7 @@ public interface IProductsManagementService
     Task<ResponseProductModel> GetByIdAsync(Guid id);
     Task<ResponseProductModel> UpdateAsync(Guid id, RequestProductModel dto);
     Task DisableAsync(Guid id);
+    Task<ProductModel.ResponsePagination?> GetProducts(ProductModel.FilterProduct request);
+
 }
 
