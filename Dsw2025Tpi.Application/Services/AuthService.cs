@@ -83,6 +83,30 @@ namespace Dsw2025Tpi.Application.Services
             return _jwtTokenService.GenerateToken(user);
 
         }
+
+        public async Task<string> RegisterAdminAsync(RegisterAdminModel model)
+        {
+
+            var user = new IdentityUser
+            {
+                UserName = model.Username,
+                Email = model.Email,
+   
+            };
+
+            var result = await _userManager.CreateAsync(user, model.Password);
+
+            if (!result.Succeeded)
+            {
+                var errors = string.Join("; ", result.Errors.Select(e => e.Description));
+                throw new BadRequestException($"Error en el registro: {errors}");
+            }
+
+            await _userManager.AddToRoleAsync(user, "Admin");
+
+            return "Usuario registrado correctamente como administrador.";
+        }
+
     }
 }
 

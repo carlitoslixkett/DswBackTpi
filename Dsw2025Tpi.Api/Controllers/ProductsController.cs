@@ -41,10 +41,15 @@ namespace Dsw2025Tpi.Api.Controllers
         {
             var products = await _productService.GetAllAsync();
 
-            if (products == null || !products.Any())
+            
+            var activeProducts = products?
+                .Where(p => p.IsActive)   // esto cambiamos para que en el getproduct solo traiga los activos (asi pedia el profe)
+                .ToList();
+
+            if (activeProducts == null || !activeProducts.Any())
                 return NoContent();
 
-            return Ok(products);
+            return Ok(activeProducts);
         }
 
 

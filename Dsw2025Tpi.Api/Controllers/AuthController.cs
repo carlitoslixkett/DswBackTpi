@@ -31,5 +31,14 @@ namespace Dsw2025Tpi.Api.Controllers
             var token = await _authService.LoginAsync(dto);
             return Ok(token);
         }
+
+        // Registro de ADMIN – sólo un Admin puede usar este endpoint
+        [Authorize(Roles = "Admin")]
+        [HttpPost("register-admin")]
+        public async Task<IActionResult> RegisterAdmin([FromBody] RegisterAdminModel dto)
+        {
+            var message = await _authService.RegisterAdminAsync(dto);
+            return Ok(new { message });
+        }
     }
 }
