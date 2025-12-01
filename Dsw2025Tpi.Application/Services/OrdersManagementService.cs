@@ -72,6 +72,12 @@ namespace Dsw2025Tpi.Application.Services
 
             await _repository.Add(order);
 
+            var customer = await _repository.GetById<Customer>(order.CustomerId);
+            var customerName = customer != null
+                // TODO: reemplazar "Name" por la propiedad real (FullName, FirstName, etc.)
+                ? customer.Name
+                : string.Empty;
+
             return new ResponseOrderModel(
                 order.Id,
                 order.Date,
@@ -79,7 +85,8 @@ namespace Dsw2025Tpi.Application.Services
                 order.BillingAddress,
                 order.Notes,
                 order.CustomerId,
-                order.Status
+                order.Status,
+                customerName
             );
         }
 
@@ -97,6 +104,9 @@ namespace Dsw2025Tpi.Application.Services
 
             await _repository.Update(order);
 
+            var customer = await _repository.GetById<Customer>(order.CustomerId);
+            var customerName = customer != null ? customer.Name : string.Empty;
+
             return new ResponseOrderModel(
                 order.Id,
                 order.Date,
@@ -104,17 +114,20 @@ namespace Dsw2025Tpi.Application.Services
                 order.BillingAddress,
                 order.Notes,
                 order.CustomerId,
-                order.Status
+                order.Status,
+                customerName             
             );
         }
 
 
         public async Task<ResponseOrderModel> GetOrderById(Guid id)
         {
-            var order = await _repository.GetById<Order>(id, "OrderItems");
+            var order = await _repository.GetById<Order>(id, "OrderItems", "Customer");
 
             if (order == null)
                 throw new EntityNotFoundException("Orden no encontrada");
+
+            var customerName = order.Customer != null ? order.Customer.Name : string.Empty;
 
             return new ResponseOrderModel(
                 order.Id,
@@ -123,43 +136,56 @@ namespace Dsw2025Tpi.Application.Services
                 order.BillingAddress,
                 order.Notes,
                 order.CustomerId,
-                order.Status
+                order.Status,
+                customerName
             );
         }
 
         public async Task<IEnumerable<ResponseOrderModel>?> GetAllOrders()
         {
-            var orders = await _repository.GetAll<Order>("OrderItems");
+            var orders = await _repository.GetAll<Order>("OrderItems", "Customer");
 
-            return orders.Select(order => new ResponseOrderModel(
-                order.Id,
-                order.Date,
-                order.ShippingAddress,
-                order.BillingAddress,
-                order.Notes,
-                order.CustomerId,
-                order.Status
-            )).ToList();
+            return orders.Select(order =>
+            {
+                var customerName = order.Customer != null ? order.Customer.Name : string.Empty;
+
+                return new ResponseOrderModel(
+                    order.Id,
+                    order.Date,
+                    order.ShippingAddress,
+                    order.BillingAddress,
+                    order.Notes,
+                    order.CustomerId,
+                    order.Status,
+                    customerName
+                );
+            }).ToList();
         }
-
         public async Task<List<ResponseOrderModel>> GetFilteredAsync(string? status, Guid? customerId)
         {
             var filtered = await _repository.GetFiltered<Order>(
                 o =>
                     (string.IsNullOrEmpty(status) || o.Status.ToString() == status)
                     && (!customerId.HasValue || o.CustomerId == customerId.Value),
-                "OrderItems"
+                "OrderItems",
+                "Customer" //  incluimos Customer
             );
 
-            return filtered.Select(order => new ResponseOrderModel(
-                order.Id,
-                order.Date,
-                order.ShippingAddress,
-                order.BillingAddress,
-                order.Notes,
-                order.CustomerId,
-                order.Status
-            )).ToList();
+            return filtered.Select(order =>
+            {
+                var customerName = order.Customer != null ? order.Customer.Name : string.Empty;
+
+                return new ResponseOrderModel(
+                    order.Id,
+                    order.Date,
+                    order.ShippingAddress,
+                    order.BillingAddress,
+                    order.Notes,
+                    order.CustomerId,
+                    order.Status,
+                    customerName
+                );
+            }).ToList();
         }
 
         public async Task<ResponseOrderModel> UpdateStatusAsync(Guid id, string newStatus)
@@ -176,6 +202,8 @@ namespace Dsw2025Tpi.Application.Services
 
             await _repository.Update(order);
 
+            var customerName = order.Customer != null ? order.Customer.Name : string.Empty;
+
             return new ResponseOrderModel(
                 order.Id,
                 order.Date,
@@ -183,12 +211,14 @@ namespace Dsw2025Tpi.Application.Services
                 order.BillingAddress,
                 order.Notes,
                 order.CustomerId,
-                order.Status
+                order.Status,
+                customerName
             );
         }
         public async Task<IEnumerable<ResponseOrderModel>> GetAllOrders(string? status, Guid? customerId, int pageNumber, int pageSize)
         {
-            var allOrders = await _repository.GetAll<Order>("OrderItems");
+            // incluimos Customer acá también
+            var allOrders = await _repository.GetAll<Order>("OrderItems", "Customer");
 
             if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<OrderStatus>(status, true, out var parsedStatus))
                 allOrders = allOrders?.Where(o => o.Status == parsedStatus);
@@ -200,16 +230,21 @@ namespace Dsw2025Tpi.Application.Services
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize);
 
-            return pagedOrders?.Select(order => new ResponseOrderModel(
-                order.Id,
-                order.Date,
-                order.ShippingAddress,
-                order.BillingAddress,
-                order.Notes,
-                order.CustomerId,
-                order.Status
-            )) ?? Enumerable.Empty<ResponseOrderModel>();
-        }
+            return pagedOrders?.Select(order =>
+            {
+                var customerName = order.Customer != null ? order.Customer.Name : string.Empty;
 
+                return new ResponseOrderModel(
+                    order.Id,
+                    order.Date,
+                    order.ShippingAddress,
+                    order.BillingAddress,
+                    order.Notes,
+                    order.CustomerId,
+                    order.Status,
+                    customerName
+                );
+            }) ?? Enumerable.Empty<ResponseOrderModel>();
+        }
     }
 }
