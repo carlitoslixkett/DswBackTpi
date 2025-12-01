@@ -21,7 +21,22 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
         builder.Services.AddControllers();
+
         builder.Services.AddEndpointsApiExplorer();
+
+        // HABILITAR CORS PARA EL FRONTEND VITE
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("AllowFrontend", policy =>
+            {
+                policy.WithOrigins("http://localhost:5173")
+                      .AllowAnyHeader()
+                      .AllowAnyMethod()
+                      .AllowCredentials();
+            });
+        });
+
+
         builder.Services.AddSwaggerGen(c =>
         {
 
@@ -160,6 +175,7 @@ public class Program
 
   
         app.UseHttpsRedirection();
+        app.UseCors("AllowFrontend");
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
