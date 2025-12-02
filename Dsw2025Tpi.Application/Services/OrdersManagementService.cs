@@ -22,6 +22,44 @@ namespace Dsw2025Tpi.Application.Services
             _repository = repository;
         }
 
+        // ================= HELPERs PARA MAPEAR =================
+
+        private ResponseOrderItemModel MapOrderItem(OrderItem oi)
+            => new ResponseOrderItemModel(
+                oi.Id,
+                oi.Quantity,
+                oi.UnitPrice,
+                oi.OrderId,
+                oi.ProductId,
+                oi.Product?.Name ?? string.Empty
+            );
+
+        private ResponseOrderModel MapOrder(Order order)
+        {
+            // ⚠️ Cambiá "Name" por la propiedad real de tu entidad Customer
+            var customerName = order.Customer != null
+                ? order.Customer.Name
+                : string.Empty;
+
+            var itemsDto = order.OrderItems?
+                .Select(MapOrderItem)
+                ?? Enumerable.Empty<ResponseOrderItemModel>();
+
+            return new ResponseOrderModel(
+                order.Id,
+                order.Date,
+                order.ShippingAddress,
+                order.BillingAddress,
+                order.Notes,
+                order.CustomerId,
+                order.Status,
+                customerName,
+                itemsDto
+            );
+        }
+
+        // ================= MÉTODOS PÚBLICOS =================
+
         public async Task<ResponseOrderModel> AddOrder(RequestOrderModel request)
         {
             OrderValidator.Validate(request);
@@ -53,7 +91,6 @@ namespace Dsw2025Tpi.Application.Services
                     ProductId = product.Id,
                     Quantity = item.Quantity,
                     UnitPrice = product.CurrentUnitPrice,
-                  
                 });
 
                 total += subtotal;
@@ -67,32 +104,20 @@ namespace Dsw2025Tpi.Application.Services
                 ShippingAddress = request.ShippingAddress ?? string.Empty,
                 BillingAddress = request.BillingAddress ?? string.Empty,
                 OrderItems = orderItems,
-               
             };
 
             await _repository.Add(order);
 
+            // cargamos el Customer para que MapOrder tenga el nombre
             var customer = await _repository.GetById<Customer>(order.CustomerId);
-            var customerName = customer != null
-                // TODO: reemplazar "Name" por la propiedad real (FullName, FirstName, etc.)
-                ? customer.Name
-                : string.Empty;
+            order.Customer = customer;
 
-            return new ResponseOrderModel(
-                order.Id,
-                order.Date,
-                order.ShippingAddress,
-                order.BillingAddress,
-                order.Notes,
-                order.CustomerId,
-                order.Status,
-                customerName
-            );
+            return MapOrder(order);
         }
 
         public async Task<ResponseOrderModel> PutOrder(Guid id, RequestOrderModel request)
         {
-            var order = await _repository.GetById<Order>(id, "OrderItems");
+            var order = await _repository.GetById<Order>(id, "OrderItems.Product", "Customer");
 
             if (order == null)
                 throw new EntityNotFoundException("Orden no encontrada");
@@ -101,96 +126,48 @@ namespace Dsw2025Tpi.Application.Services
             order.ShippingAddress = request.ShippingAddress ?? string.Empty;
             order.BillingAddress = request.BillingAddress ?? string.Empty;
 
-
             await _repository.Update(order);
 
-            var customer = await _repository.GetById<Customer>(order.CustomerId);
-            var customerName = customer != null ? customer.Name : string.Empty;
-
-            return new ResponseOrderModel(
-                order.Id,
-                order.Date,
-                order.ShippingAddress,
-                order.BillingAddress,
-                order.Notes,
-                order.CustomerId,
-                order.Status,
-                customerName             
-            );
+            return MapOrder(order);
         }
-
 
         public async Task<ResponseOrderModel> GetOrderById(Guid id)
         {
-            var order = await _repository.GetById<Order>(id, "OrderItems", "Customer");
+            var order = await _repository.GetById<Order>(id, "OrderItems.Product", "Customer");
 
             if (order == null)
                 throw new EntityNotFoundException("Orden no encontrada");
 
-            var customerName = order.Customer != null ? order.Customer.Name : string.Empty;
-
-            return new ResponseOrderModel(
-                order.Id,
-                order.Date,
-                order.ShippingAddress,
-                order.BillingAddress,
-                order.Notes,
-                order.CustomerId,
-                order.Status,
-                customerName
-            );
+            return MapOrder(order);
         }
 
         public async Task<IEnumerable<ResponseOrderModel>?> GetAllOrders()
         {
-            var orders = await _repository.GetAll<Order>("OrderItems", "Customer");
+            var orders = await _repository.GetAll<Order>("OrderItems.Product", "Customer");
 
-            return orders.Select(order =>
-            {
-                var customerName = order.Customer != null ? order.Customer.Name : string.Empty;
-
-                return new ResponseOrderModel(
-                    order.Id,
-                    order.Date,
-                    order.ShippingAddress,
-                    order.BillingAddress,
-                    order.Notes,
-                    order.CustomerId,
-                    order.Status,
-                    customerName
-                );
-            }).ToList();
+            return orders
+                .Select(MapOrder)
+                .ToList();
         }
+
         public async Task<List<ResponseOrderModel>> GetFilteredAsync(string? status, Guid? customerId)
         {
             var filtered = await _repository.GetFiltered<Order>(
                 o =>
                     (string.IsNullOrEmpty(status) || o.Status.ToString() == status)
                     && (!customerId.HasValue || o.CustomerId == customerId.Value),
-                "OrderItems",
-                "Customer" //  incluimos Customer
+                "OrderItems.Product",
+                "Customer"
             );
 
-            return filtered.Select(order =>
-            {
-                var customerName = order.Customer != null ? order.Customer.Name : string.Empty;
-
-                return new ResponseOrderModel(
-                    order.Id,
-                    order.Date,
-                    order.ShippingAddress,
-                    order.BillingAddress,
-                    order.Notes,
-                    order.CustomerId,
-                    order.Status,
-                    customerName
-                );
-            }).ToList();
+            return filtered
+                .Select(MapOrder)
+                .ToList();
         }
 
         public async Task<ResponseOrderModel> UpdateStatusAsync(Guid id, string newStatus)
         {
-            var order = await _repository.GetById<Order>(id);
+            var order = await _repository.GetById<Order>(id, "OrderItems.Product", "Customer");
 
             if (order == null)
                 throw new EntityNotFoundException("Orden no encontrada");
@@ -202,49 +179,35 @@ namespace Dsw2025Tpi.Application.Services
 
             await _repository.Update(order);
 
-            var customerName = order.Customer != null ? order.Customer.Name : string.Empty;
-
-            return new ResponseOrderModel(
-                order.Id,
-                order.Date,
-                order.ShippingAddress,
-                order.BillingAddress,
-                order.Notes,
-                order.CustomerId,
-                order.Status,
-                customerName
-            );
+            return MapOrder(order);
         }
-        public async Task<IEnumerable<ResponseOrderModel>> GetAllOrders(string? status, Guid? customerId, int pageNumber, int pageSize)
-        {
-            // incluimos Customer acá también
-            var allOrders = await _repository.GetAll<Order>("OrderItems", "Customer");
 
-            if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<OrderStatus>(status, true, out var parsedStatus))
+        public async Task<IEnumerable<ResponseOrderModel>> GetAllOrders(
+            string? status,
+            Guid? customerId,
+            int pageNumber,
+            int pageSize)
+        {
+            var allOrders = await _repository.GetAll<Order>("OrderItems.Product", "Customer");
+
+            if (!string.IsNullOrWhiteSpace(status) &&
+                Enum.TryParse<OrderStatus>(status, true, out var parsedStatus))
+            {
                 allOrders = allOrders?.Where(o => o.Status == parsedStatus);
+            }
 
             if (customerId.HasValue)
+            {
                 allOrders = allOrders?.Where(o => o.CustomerId == customerId.Value);
+            }
 
             var pagedOrders = allOrders?
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize);
 
-            return pagedOrders?.Select(order =>
-            {
-                var customerName = order.Customer != null ? order.Customer.Name : string.Empty;
-
-                return new ResponseOrderModel(
-                    order.Id,
-                    order.Date,
-                    order.ShippingAddress,
-                    order.BillingAddress,
-                    order.Notes,
-                    order.CustomerId,
-                    order.Status,
-                    customerName
-                );
-            }) ?? Enumerable.Empty<ResponseOrderModel>();
+            return pagedOrders?
+                .Select(MapOrder)
+                ?? Enumerable.Empty<ResponseOrderModel>();
         }
     }
 }
