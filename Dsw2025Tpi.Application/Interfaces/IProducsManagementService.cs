@@ -13,6 +13,7 @@ public interface IProductsManagementService
     Task<ResponseProductModel> GetByIdAsync(Guid id);
     Task<ResponseProductModel> UpdateAsync(Guid id, RequestProductModel dto);
     Task DisableAsync(Guid id);
+    Task<PagedResult<ResponseProductModel>> GetPagedAsync(int pageNumber, int pageSize, string? search);
     Task<ProductModel.ResponsePagination?> GetProducts(ProductModel.FilterProduct request);
 
 }

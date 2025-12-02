@@ -35,23 +35,22 @@ namespace Dsw2025Tpi.Api.Controllers
 
 
 
+
+
         [HttpGet]
         [AllowAnonymous]
-        public async Task<IActionResult> GetAllProducts()
+        public async Task<IActionResult> GetPagedProducts(
+    [FromQuery] int pageNumber = 1,
+    [FromQuery] int pageSize = 6,
+    [FromQuery] string? search = null)
         {
-            var products = await _productService.GetAllAsync();
+            var result = await _productService.GetPagedAsync(pageNumber, pageSize, search);
 
-            
-            var activeProducts = products?
-                .Where(p => p.IsActive)   // esto cambiamos para que en el getproduct solo traiga los activos (asi pedia el profe)
-                .ToList();
-
-            if (activeProducts == null || !activeProducts.Any())
+            if (result.Items == null || !result.Items.Any())
                 return NoContent();
 
-            return Ok(activeProducts);
+            return Ok(result);
         }
-
 
 
         [HttpGet("{id}")]
@@ -67,7 +66,7 @@ namespace Dsw2025Tpi.Api.Controllers
             {
                 return NotFound(new { message = ex.Message }); 
             }
-        }
+        } 
 
 
 
@@ -123,6 +122,7 @@ namespace Dsw2025Tpi.Api.Controllers
 
             return Ok(products);
         }
+
 
     }
 }

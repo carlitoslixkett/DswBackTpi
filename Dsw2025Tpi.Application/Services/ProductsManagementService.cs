@@ -140,36 +140,22 @@ namespace Dsw2025Tpi.Application.Services
 
         }
 
-        public async Task<ProductModel.ResponsePagination?> GetProducts(ProductModel.FilterProduct request)
+        public async Task<PagedResult<ResponseProductModel>> GetPagedAsync(int pageNumber, int pageSize, string? search)
         {
-            bool? isActive = request.Status?.ToLower() switch
-            {
-                "enabled" => true,
-                "disabled" => false,
-                _ => null
-            };
-
-            _logger.LogInformation("Consulta de productos por admin");
-
-            // Obtener todos los productos
-            var productsDb = await _repository.GetFiltered<Product>(p =>
-                (isActive == null || p.IsActive == isActive) &&
-                (string.IsNullOrEmpty(request.Search) ||
-                 p.Name.ToLower().Contains(request.Search.ToLower()))
+            // 1. Obtener productos activos
+            var productsDb = await _repository.GetFiltered<Product>(
+                p => p.IsActive &&
+                (string.IsNullOrEmpty(search) || p.Name.ToLower().Contains(search.ToLower()))
             );
 
-            if (productsDb == null || !productsDb.Any())
-                return null;
+            int totalCount = productsDb.Count();
+            int totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
 
-            // Paginación
-            int page = request.PageNumber ?? 1;
-            int size = request.PageSize ?? productsDb.Count();
-
-            var pagedProducts = productsDb
-                .OrderBy(p => p.Sku)
-                .Skip((page - 1) * size)
-                .Take(size)
-                .Select(p => new ProductModel.ResponseProductModel(
+            var items = productsDb
+                .OrderBy(p => p.Name)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .Select(p => new ResponseProductModel(
                     p.Id,
                     p.Sku,
                     p.InternalCode,
@@ -181,11 +167,56 @@ namespace Dsw2025Tpi.Application.Services
                 ))
                 .ToList();
 
-            return new ProductModel.ResponsePagination(
-                pagedProducts,             // items
-                productsDb.Count()         // total
-            );
+            return new PagedResult<ResponseProductModel>(items, totalPages, totalCount);
         }
+
+
+          public async Task<ProductModel.ResponsePagination?> GetProducts(ProductModel.FilterProduct request)
+          {
+              bool? isActive = request.Status?.ToLower() switch
+              {
+                  "enabled" => true,
+                  "disabled" => false,
+                  _ => null
+              };
+
+              _logger.LogInformation("Consulta de productos por admin");
+
+              // Obtener todos los productos
+              var productsDb = await _repository.GetFiltered<Product>(p =>
+                  (isActive == null || p.IsActive == isActive) &&
+                  (string.IsNullOrEmpty(request.Search) ||
+                   p.Name.ToLower().Contains(request.Search.ToLower()))
+              );
+
+              if (productsDb == null || !productsDb.Any())
+                  return null;
+
+              // Paginación
+              int page = request.PageNumber ?? 1;
+              int size = request.PageSize ?? productsDb.Count();
+
+              var pagedProducts = productsDb
+                  .OrderBy(p => p.Sku)
+                  .Skip((page - 1) * size)
+                  .Take(size)
+                  .Select(p => new ProductModel.ResponseProductModel(
+                      p.Id,
+                      p.Sku,
+                      p.InternalCode,
+                      p.Name,
+                      p.Description,
+                      p.CurrentUnitPrice,
+                      p.StockQuantity,
+                      p.IsActive
+                  ))
+                  .ToList();
+
+              return new ProductModel.ResponsePagination(
+                  pagedProducts,             // items
+                  productsDb.Count()         // total
+              );
+          }
 
     }
 }

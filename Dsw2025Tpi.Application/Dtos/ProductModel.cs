@@ -17,6 +17,12 @@ namespace Dsw2025Tpi.Application.Dtos
        int Total
    );
 
+        public record PagedResult<T>(
+List<T> Items,
+int TotalPages,
+int TotalCount
+);
+
         public record FilterProduct(
             string? Status,
             string? Search,
