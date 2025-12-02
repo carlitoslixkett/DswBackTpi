@@ -6,7 +6,7 @@ namespace Dsw2025Tpi.Application.Dtos
     {
         public record RequestOrderModel(Guid CustomerId, string ShippingAddress, string BillingAddress, List<OrderItemModel.RequestOrderItemModel> OrderItems);
 
-        public record ResponseOrderModel(Guid Id, DateTime Date, string? ShippingAddress, string? BillingAddress, string? Notes, Guid CustomerId, OrderStatus Status);
+        public record ResponseOrderModel(Guid Id, DateTime Date, string? ShippingAddress, string? BillingAddress, string? Notes, Guid CustomerId, OrderStatus Status, string CustomerName, IEnumerable<OrderItemModel.ResponseOrderItemModel> OrderItems);
 
         public record UpdateStatusRequest(string NewStatus);
     }
