@@ -8,7 +8,7 @@ namespace Dsw2025Tpi.Application.Dtos
 
         public record ResponseOrderModel(Guid Id, DateTime Date, string? ShippingAddress, string? BillingAddress, string? Notes, Guid CustomerId, OrderStatus Status, string CustomerName, IEnumerable<OrderItemModel.ResponseOrderItemModel> OrderItems);
 
-        public record UpdateStatusRequest(string NewStatus);
+        public record UpdateStatusRequest(string newStatus);
     }
 }
 

@@ -83,7 +83,7 @@ namespace Dsw2025Tpi.Api.Controllers
             try
             {
  
-                var result = await _orderService.UpdateStatusAsync(id, request.NewStatus);
+                var result = await _orderService.UpdateStatusAsync(id, request.newStatus);
 
                 return Ok(result);
             }
