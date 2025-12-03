@@ -94,11 +94,11 @@ namespace Dsw2025Tpi.Api.Controllers
 
         [HttpPatch("{id}")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> DisableProduct(Guid id)
+        public async Task<IActionResult> ToggleProduct(Guid id)
         {
             try
             {
-                await _productService.DisableAsync(id);
+                await _productService.ToggleActiveAsync(id);
 
                 return NoContent();
             }

@@ -126,19 +126,19 @@ namespace Dsw2025Tpi.Application.Services
             );
         }
 
-        public async Task DisableAsync(Guid id)
+        public async Task ToggleActiveAsync(Guid id)
         {
             var product = await _repository.GetById<Product>(id);
-
 
             if (product == null)
                 throw new EntityNotFoundException("Producto no encontrado");
 
-            product.IsActive = false;
+            // Alternar estado
+            product.IsActive = !product.IsActive;
 
             await _repository.Update(product);
-
         }
+
 
         public async Task<PagedResult<ResponseProductModel>> GetPagedAsync(int pageNumber, int pageSize, string? search)
         {
